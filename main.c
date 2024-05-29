@@ -128,17 +128,18 @@ int checkDirectionBase() {
     for (int i = 0; i < 4; i++) {
         int step = 1;
         while (1) {
+            matrix[stationLine][stationColumn] = 2;
             int newLine = robot.line + step * directions[i][0];
             int newColumn = robot.column + step * directions[i][1];
             
             if (!isValidMove(newLine, newColumn)) break;
 
-            if (matrix[newLine][newColumn] == 0 || (newLine == stationLine && newColumn == stationColumn)) {
+            if ((newLine == stationLine && newColumn == stationColumn) || matrix[newLine][newColumn] == 0) {
                 int sideLine = robot.line + directions[i][0];
                 int sideColumn = robot.column + directions[i][1];
                 
                 if (isValidMove(sideLine, sideColumn) && 
-                    (matrix[sideLine][sideColumn] == 0 || matrix[sideLine][sideColumn] == 2)) {
+                    (matrix[sideLine][sideColumn] == 0 || matrix[sideLine][sideColumn] == 3)) {
                     return i + 1;
                 }
             }
@@ -151,7 +152,6 @@ int checkDirectionBase() {
 // Função para mover o robô de volta à base
 void returnBase() {
     while (robot.line != stationLine || robot.column != stationColumn) {
-        matrix[stationLine][stationColumn] = 2;
         int direction = checkDirectionBase();
         
         if (robot.line != stationLine || robot.column != stationColumn) {
@@ -172,7 +172,6 @@ void returnBase() {
                 robot.line += 1;
                 break;
         }
-        
         matrix[robot.line][robot.column] = -1;
         printMatrix();
         sleep(1);
