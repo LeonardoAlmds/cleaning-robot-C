@@ -119,17 +119,30 @@ void verifyTrash() {
 }
 
 int isValidMove(int x, int y) {
-    return x >= 0 && x < SIZE && y >= 0 && y < SIZE;
+    return y < SIZE && y >= 0 && x < SIZE && x >= 0;
 }
 
 int checkDirectionBase() {
     int directions[4][2] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+    
     for (int i = 0; i < 4; i++) {
-        int newLine = robot.line + directions[i][0];
-        int newColumn = robot.column + directions[i][1];
-        
-        if (isValidMove(newLine, newColumn) && (matrix[newLine][newColumn] == 0 || (newLine == stationLine && newColumn == stationColumn))) {
-            return i + 1;
+        int step = 1;
+        while (1) {
+            int newLine = robot.line + step * directions[i][0];
+            int newColumn = robot.column + step * directions[i][1];
+            
+            if (!isValidMove(newLine, newColumn)) break;
+
+            if (matrix[newLine][newColumn] == 0 || (newLine == stationLine && newColumn == stationColumn)) {
+                int sideLine = robot.line + directions[i][0];
+                int sideColumn = robot.column + directions[i][1];
+                
+                if (isValidMove(sideLine, sideColumn) && 
+                    (matrix[sideLine][sideColumn] == 0 || matrix[sideLine][sideColumn] == 2)) {
+                    return i + 1;
+                }
+            }
+            step++;
         }
     }
     return 0;
@@ -138,6 +151,7 @@ int checkDirectionBase() {
 // Função para mover o robô de volta à base
 void returnBase() {
     while (robot.line != stationLine || robot.column != stationColumn) {
+        matrix[stationLine][stationColumn] = 2;
         int direction = checkDirectionBase();
         
         if (robot.line != stationLine || robot.column != stationColumn) {
@@ -165,54 +179,44 @@ void returnBase() {
     }
 }
 
-int returnBaseS() {
-    while (1) {
-        int direction = checkDirectionBase();
-
-        if (!(robot.line == stationLine && robot.column == stationColumn)) {
-            matrix[robot.line][robot.column] = 0;
-        }
-
-        switch (direction) {
-            case 1: // Cima
-                robot.line -= 1;
-                break;
-            case 2: // Esquerda
-                robot.column -= 1;
-                break;
-            case 3: // Direita
-                robot.column += 1;
-                break;
-            case 4: // Baixo
-                robot.line += 1;
-                break;
-        }
-
-        // Atualiza a posição do robô na matriz
-        matrix[robot.line][robot.column] = -1;
-        printMatrix();
-        sleep(1);
-    }
-    return 0;
-}
-
-
 int checkDirectionTrash() {
-    // Direções: Cima, Esquerda, Direita, Baixo, Base
-    int directions[5][2] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}, {0, 0}};
-    for (int i = 0; i < 5; i++) {
-        int newLine = robot.line + directions[i][0];
-        int newColumn = robot.column + directions[i][1];
-        
-        if (isValidMove(newLine, newColumn)) {
-            if (i < 4 && matrix[newLine][newColumn] == 2) {
-                return i + 1; // Retorna a direção correspondente (1 a 4)
-            } else if (i == 4 && newLine == stationLine && newColumn == stationColumn) {
-                return 5; // Retorna 5 para a base
+    // Direções: Cima, Esquerda, Direita, Baixo 
+    int directions[4][2] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+    int lastDirection = 0;
+
+    for (int i = 0; i < 4; i++) {
+        int step = 1;
+        while (1) {
+            int newLine = robot.line + step * directions[i][0];
+            int newColumn = robot.column + step * directions[i][1];
+
+            if (!isValidMove(newLine, newColumn)) break;
+
+            // Verifica se a nova posição é válida e se contém lixo
+            if (matrix[newLine][newColumn] == 2) {
+                int sideLine = robot.line + directions[i][0];
+                int sideColumn = robot.column + directions[i][1];
+                
+                if (isValidMove(sideLine, sideColumn) && 
+                    (matrix[sideLine][sideColumn] == 0 || matrix[sideLine][sideColumn] == 2)) {
+                    return i + 1; // Retorna a direção correspondente
+                }
             }
+
+            // Verifica se a nova posição é a base
+            if (newLine == stationLine && newColumn == stationColumn) {
+                lastDirection = i + 1; // Armazena a direção da base
+            }
+            step++;
         }
     }
-    return 0; // Nenhum lixo encontrado
+
+    // Se nenhuma direção com lixo foi encontrada, retorna a direção da base, se disponível
+    if (lastDirection != 0) {
+        return lastDirection;
+    }
+
+    return 0; // Nenhum lixo ou base encontrado
 }
 
 int moveRobot() {
@@ -224,12 +228,11 @@ int moveRobot() {
     while (trashCounter > 0) {
         verifyTrash();
         int directionTrash = checkDirectionTrash();
-        
         // Se o robô não está na estação, limpa a posição atual
         if (!(robot.line == stationLine && robot.column == stationColumn)) {
             matrix[robot.line][robot.column] = 0;
         }
-        
+
         // Move o robô baseado na direção do lixo
         switch (directionTrash) {
             case 1: // Cima
@@ -248,18 +251,14 @@ int moveRobot() {
                 robot.line += 1;
                 trashCounter -= 1;
                 break;
-            case 5: // Base
-                // Move para a base como último recurso
-                break;
             default:
-                returnBaseS();
                 verifyTrash();
                 break;
         }
         matrix[robot.line][robot.column] = -1;
         matrix[stationLine][stationColumn] = 3;
         printMatrix();
-        sleep(1); // Adiciona uma pausa para visualização do movimento
+        sleep(1);
     }
     returnBase();
     return 0;
