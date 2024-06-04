@@ -201,7 +201,6 @@ int moveRobot() {
 
         verifyTrash();
         int directionTrash = checkDirectionTrash();
-        int directionTrashRemaining = checkDirectionTrashremaining();
         
         // Se o robô não está na estação, limpa a posição atual
         if (!(robot.line == stationLine && robot.column == stationColumn)) {
