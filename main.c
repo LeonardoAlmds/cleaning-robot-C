@@ -155,6 +155,22 @@ int checkDirectionBase() {
     return 0;
 }
 
+int checkDirectionTrash() {
+    // Direções: Cima, Esquerda, Direita, Baixo 
+    int directions[4][2] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+
+    // Primeiro, verificar se há lixo adjacente
+    for (int i = 0; i < 4; i++) {
+        int newLine = robot.line + directions[i][0];
+        int newColumn = robot.column + directions[i][1];
+
+        if (isValidMove(newLine, newColumn) && matrix[newLine][newColumn] == 2) {
+            return i + 1; // Retorna a direção correspondente ao lixo adjacente
+            break;
+        }
+    }
+}
+
 void returnBase() {
     printf("Voltando para base...");
     sleep(2);
@@ -185,6 +201,7 @@ int moveRobot() {
 
         verifyTrash();
         int directionTrash = checkDirectionTrash();
+        int directionTrashRemaining = checkDirectionTrashremaining();
         
         // Se o robô não está na estação, limpa a posição atual
         if (!(robot.line == stationLine && robot.column == stationColumn)) {
@@ -195,7 +212,7 @@ int moveRobot() {
         if (directionTrash > 0) {
             moveRobotTo(directionTrash);
         } else {
-            
+           
         }
 
         // Atualiza a matriz e imprime
